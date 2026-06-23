@@ -101,6 +101,15 @@ void str_free(string_t *string)
     free(string);
 }
 
+string_t *str_substr(string_t *string, size_t start, size_t end)
+{
+    string_t *result = malloc(sizeof(string_t));
+    result->cursor = string->cursor + start;
+    result->length = end - start;
+    return result;
+}
+
+// String List Utils
 string_list_t *str_list_new(void)
 {
     string_list_t *list = malloc(sizeof(string_list_t));
@@ -215,4 +224,71 @@ string_t *file_read_contents(string_t *path)
         }
         return NULL;
     }
+}
+
+string_list_t *file_read_lines(string_t *path, bool keep_empty)
+{
+    string_t *contents = file_read_contents(path);
+    str_strip(contents, '\n');
+
+    string_list_t *lines = str_split(contents, STR("\n"), keep_empty);
+    str_list_ensure_ownership(lines);
+    str_free(contents);
+
+    return lines;
+}
+
+grid_t *file_read_grid(string_t *path)
+{
+    string_list_t *lines = file_read_lines(path, false);
+    grid_t *grid = grid_from_lines(lines);
+    str_list_free(lines);
+    return grid;
+}
+
+// Grid Utils
+grid_tile_t NULL_TILE_STORAGE = {0};
+grid_tile_t *NULL_TILE = &NULL_TILE_STORAGE;
+
+grid_t *grid_create(size_t rows, size_t columns)
+{
+    grid_t *grid = malloc(sizeof(grid_t));
+    grid->rows = rows;
+    grid->columns = columns;
+    grid->tiles = calloc(rows * columns, sizeof(grid_tile_t));
+    return grid;
+}
+
+grid_t *grid_from_lines(string_list_t *lines)
+{
+    size_t rows = lines->length;
+    size_t columns = 0;
+    for (size_t i=0; i < lines->length; i++) {
+        columns = MAX(columns, lines->strings[i].length);
+    }
+    grid_t *grid = grid_create(rows, columns);
+    for (size_t row=0; row < lines->length; row++) {
+        string_t *line = &lines->strings[row];
+        for (size_t column=0; column < line->length; column++) {
+            grid_tile_t *tile = grid_get(grid, row, column);
+            tile->initial_value = line->cursor[column];
+            tile->value = line->cursor[column];
+        }
+    }
+    return grid;
+}
+
+grid_tile_t *grid_get(grid_t *grid, size_t row, size_t column)
+{
+    if (row < grid->rows && column < grid->columns) {
+        return grid->tiles + (row * grid->columns + column);
+    } else {
+        return NULL_TILE;
+    }
+}
+
+void grid_free(grid_t *grid)
+{
+    free(grid->tiles);
+    free(grid);
 }

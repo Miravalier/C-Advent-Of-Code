@@ -1,11 +1,12 @@
 #ifndef _AOC_UTILS_H
 #define _AOC_UTILS_H
 
-#include <stdint.h>
+#include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 
-// String Utils
+// String and String List Utils
 typedef struct string_t {
     void *buffer;
     uint8_t *cursor;
@@ -38,6 +39,7 @@ void str_strip(string_t *string, char c);
 string_list_t *str_split(string_t *string, string_t *separator, bool keep_empty);
 string_t *str_concat(string_t *a, string_t *b);
 void str_ensure_ownership(string_t *string);
+string_t *str_substr(string_t *string, size_t start, size_t end);
 void str_free(string_t *string);
 
 string_list_t *str_list_new(void);
@@ -47,7 +49,39 @@ string_t *str_list_join(string_list_t *list, string_t *delimiter);
 void str_list_ensure_ownership(string_list_t *list);
 
 
+// Grid Utils
+typedef union metadata_u {
+    int int_value;
+    size_t size_value;
+    uintptr_t uintptr_value;
+    float float_value;
+    double double_value;
+    void *ptr;
+} metadata_u;
+
+typedef struct grid_tile_t {
+    uint8_t initial_value;
+    uint8_t value;
+    metadata_u metadata;
+} grid_tile_t;
+
+typedef struct grid_t {
+    grid_tile_t *tiles;
+    size_t rows;
+    size_t columns;
+} grid_t;
+
+extern grid_tile_t *NULL_TILE;
+
+grid_t *grid_create(size_t rows, size_t columns);
+grid_t *grid_from_lines(string_list_t *lines);
+grid_tile_t *grid_get(grid_t *grid, size_t row, size_t column);
+void grid_free(grid_t *grid);
+
+
 // File Utils
 string_t *file_read_contents(string_t *path);
+string_list_t *file_read_lines(string_t *path, bool keep_empty);
+grid_t *file_read_grid(string_t *path);
 
 #endif
