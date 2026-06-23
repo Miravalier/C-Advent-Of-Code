@@ -6,6 +6,10 @@
 #include <stdint.h>
 
 
+// Function types
+typedef int (*compare_f)(void *, void *);
+
+
 // String and String List Utils
 typedef struct string_t {
     void *buffer;
@@ -77,6 +81,27 @@ grid_t *grid_create(size_t rows, size_t columns);
 grid_t *grid_from_lines(string_list_t *lines);
 grid_tile_t *grid_get(grid_t *grid, size_t row, size_t column);
 void grid_free(grid_t *grid);
+
+
+// Map Utils
+typedef struct map_entry_t {
+    void *key;
+    void *value;
+} map_entry_t;
+
+typedef struct map_t {
+    compare_f key_compare;
+    map_entry_t *entries;
+    size_t entry_count;
+    size_t capacity;
+} map_t;
+
+map_t *map_create(compare_f key_compare);
+void *map_get(map_t *map, void *key);
+void map_set(map_t *map, void *key, void *value);
+void map_remove_null_values(map_t *map);
+bool map_contains(map_t *map, void *key);
+void map_free(map_t *map);
 
 
 // File Utils
