@@ -22,6 +22,11 @@ typedef struct vec3_t {
     size_t z;
 } vec3_t;
 
+size_t vec2_squared_distance(vec2_t *a, vec2_t *b);
+size_t vec3_squared_distance(vec3_t *a, vec3_t *b);
+double vec2_distance(vec2_t *a, vec2_t *b);
+double vec3_distance(vec3_t *a, vec3_t *b);
+
 
 // String and String List Utils
 typedef struct string_t {

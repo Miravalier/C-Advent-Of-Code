@@ -1,4 +1,5 @@
 #include <fcntl.h>
+#include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,6 +8,37 @@
 #include <sys/param.h>
 
 #include "utils.h"
+
+// Math Utils
+size_t vec2_squared_distance(vec2_t *a, vec2_t *b)
+{
+    ssize_t delta_x = ((ssize_t)a->x - (ssize_t)b->x);
+    ssize_t delta_y = ((ssize_t)a->y - (ssize_t)b->y);
+    return (size_t)(delta_x * delta_x + delta_y * delta_y);
+}
+
+size_t vec3_squared_distance(vec3_t *a, vec3_t *b)
+{
+    ssize_t delta_x = ((ssize_t)a->x - (ssize_t)b->x);
+    ssize_t delta_y = ((ssize_t)a->y - (ssize_t)b->y);
+    ssize_t delta_z = ((ssize_t)a->z - (ssize_t)b->z);
+    return (size_t)(delta_x * delta_x + delta_y * delta_y + delta_z * delta_z);
+}
+
+double vec2_distance(vec2_t *a, vec2_t *b)
+{
+    ssize_t delta_x = ((ssize_t)a->x - (ssize_t)b->x);
+    ssize_t delta_y = ((ssize_t)a->y - (ssize_t)b->y);
+    return sqrt((double)(delta_x * delta_x + delta_y * delta_y));
+}
+
+double vec3_distance(vec3_t *a, vec3_t *b)
+{
+    ssize_t delta_x = ((ssize_t)a->x - (ssize_t)b->x);
+    ssize_t delta_y = ((ssize_t)a->y - (ssize_t)b->y);
+    ssize_t delta_z = ((ssize_t)a->z - (ssize_t)b->z);
+    return sqrt((double)(delta_x * delta_x + delta_y * delta_y + delta_z * delta_z));
+}
 
 // String Utils
 string_t *str_new(const void *buffer, size_t buffer_length)
