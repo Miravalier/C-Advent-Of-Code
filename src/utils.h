@@ -7,7 +7,20 @@
 
 
 // Function types
-typedef int (*compare_f)(void *, void *);
+typedef bool (*compare_f)(void *, void *);
+
+
+// Math Utils
+typedef struct vec2_t {
+    size_t x;
+    size_t y;
+} vec2_t;
+
+typedef struct vec3_t {
+    size_t x;
+    size_t y;
+    size_t z;
+} vec3_t;
 
 
 // String and String List Utils
@@ -108,5 +121,11 @@ void map_free(map_t *map);
 string_t *file_read_contents(string_t *path);
 string_list_t *file_read_lines(string_t *path, bool keep_empty);
 grid_t *file_read_grid(string_t *path);
+
+
+// Comparators
+bool compare_strings(string_t *a, string_t *b);
+bool compare_vec2(vec2_t *a, vec2_t *b);
+bool compare_vec3(vec3_t *a, vec3_t *b);
 
 #endif

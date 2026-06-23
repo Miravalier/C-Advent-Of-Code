@@ -367,3 +367,22 @@ grid_t *file_read_grid(string_t *path)
     str_list_free(lines);
     return grid;
 }
+
+// Ready to go comparators
+bool compare_strings(string_t *a, string_t *b)
+{
+    if (a->length != b->length) {
+        return false;
+    }
+    return memcmp(a->cursor, b->cursor, a->length) == 0;
+}
+
+bool compare_vec2(vec2_t *a, vec2_t *b)
+{
+    return (a->x == b->x) && (a->y == b->y);
+}
+
+bool compare_vec3(vec3_t *a, vec3_t *b)
+{
+    return (a->x == b->x) && (a->y == b->y) && (a->z == b->z);
+}
