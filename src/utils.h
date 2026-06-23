@@ -1,0 +1,53 @@
+#ifndef _AOC_UTILS_H
+#define _AOC_UTILS_H
+
+#include <stdint.h>
+#include <stddef.h>
+
+
+// String Utils
+typedef struct string_t {
+    void *buffer;
+    uint8_t *cursor;
+    size_t length;
+} string_t;
+
+typedef struct string_list_t {
+    string_t *strings;
+    size_t length;
+    size_t capacity;
+} string_list_t;
+
+#define STR(s) (&((string_t){ \
+    .buffer = NULL, \
+    .cursor = (uint8_t*)(s), \
+    .length = sizeof(s) - 1, \
+}))
+
+#define STR_FROM_PTR(ptr, ptr_length) (&((string_t){ \
+    .buffer = NULL, \
+    .cursor = (uint8_t*)(ptr), \
+    .length = (ptr_length), \
+}))
+
+string_t *str_new(const void *buffer, size_t buffer_length);
+string_t *str_copy(string_t *string);
+void str_left_strip(string_t *string, char c);
+void str_right_strip(string_t *string, char c);
+void str_strip(string_t *string, char c);
+string_list_t *str_split(string_t *string, string_t *separator, bool keep_empty);
+string_t *str_concat(string_t *a, string_t *b);
+void str_ensure_ownership(string_t *string);
+void str_free(string_t *string);
+
+string_list_t *str_list_new(void);
+void str_list_free(string_list_t *list);
+void str_list_append(string_list_t *list, string_t *string);
+string_t *str_list_join(string_list_t *list, string_t *delimiter);
+void str_list_ensure_ownership(string_list_t *list);
+
+
+// File Utils
+string_t *file_read_contents(string_t *path);
+
+#endif
