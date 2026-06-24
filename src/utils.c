@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <fcntl.h>
 #include <math.h>
 #include <stdbool.h>
@@ -17,6 +18,21 @@ size_t vec2_squared_distance(vec2_t *a, vec2_t *b)
     return (size_t)(delta_x * delta_x + delta_y * delta_y);
 }
 
+double vec2_distance(vec2_t *a, vec2_t *b)
+{
+    ssize_t delta_x = ((ssize_t)a->x - (ssize_t)b->x);
+    ssize_t delta_y = ((ssize_t)a->y - (ssize_t)b->y);
+    return sqrt((double)(delta_x * delta_x + delta_y * delta_y));
+}
+
+vec2_t *vec2_copy(vec2_t *vec)
+{
+    vec2_t *new_vec = malloc(sizeof(vec2_t));
+    new_vec->x = vec->x;
+    new_vec->y = vec->y;
+    return new_vec;
+}
+
 size_t vec3_squared_distance(vec3_t *a, vec3_t *b)
 {
     ssize_t delta_x = ((ssize_t)a->x - (ssize_t)b->x);
@@ -25,19 +41,71 @@ size_t vec3_squared_distance(vec3_t *a, vec3_t *b)
     return (size_t)(delta_x * delta_x + delta_y * delta_y + delta_z * delta_z);
 }
 
-double vec2_distance(vec2_t *a, vec2_t *b)
-{
-    ssize_t delta_x = ((ssize_t)a->x - (ssize_t)b->x);
-    ssize_t delta_y = ((ssize_t)a->y - (ssize_t)b->y);
-    return sqrt((double)(delta_x * delta_x + delta_y * delta_y));
-}
-
 double vec3_distance(vec3_t *a, vec3_t *b)
 {
     ssize_t delta_x = ((ssize_t)a->x - (ssize_t)b->x);
     ssize_t delta_y = ((ssize_t)a->y - (ssize_t)b->y);
     ssize_t delta_z = ((ssize_t)a->z - (ssize_t)b->z);
     return sqrt((double)(delta_x * delta_x + delta_y * delta_y + delta_z * delta_z));
+}
+
+vec3_t *vec3_copy(vec3_t *vec)
+{
+    vec3_t *new_vec = malloc(sizeof(vec3_t));
+    new_vec->x = vec->x;
+    new_vec->y = vec->y;
+    new_vec->z = vec->z;
+    return new_vec;
+}
+
+vec2_list_t *vec2_list_new()
+{
+    vec2_list_t *list = malloc(sizeof(vec2_list_t));
+    list->capacity = 16;
+    list->item_count = 0;
+    list->items = malloc(sizeof(vec2_t) * list->capacity);
+    return list;
+}
+
+void vec2_list_append(vec2_list_t *list, vec2_t *vec)
+{
+    if (list->item_count == list->capacity) {
+        list->capacity *= 2;
+        list->items = realloc(list->items, sizeof(vec2_t) * list->capacity);
+    }
+    vec2_t *stored_vec = &list->items[list->item_count++];
+    memcpy(stored_vec, vec, sizeof(vec2_t));
+}
+
+void vec2_list_free(vec2_list_t *list)
+{
+    free(list->items);
+    free(list);
+}
+
+vec3_list_t *vec3_list_new()
+{
+    vec3_list_t *list = malloc(sizeof(vec3_list_t));
+    list->capacity = 16;
+    list->item_count = 0;
+    list->items = malloc(sizeof(vec3_t) * list->capacity);
+    return list;
+}
+
+void vec3_list_append(vec3_list_t *list, vec3_t *vec)
+{
+    if (list->item_count == list->capacity) {
+        list->capacity *= 2;
+        list->items = realloc(list->items, sizeof(vec3_t) * list->capacity);
+    }
+    vec3_t *stored_vec = &list->items[list->item_count++];
+    memcpy(stored_vec, vec, sizeof(vec3_t));
+}
+
+void vec3_list_free(vec3_list_t *list)
+{
+    free(list->items);
+    free(list);
 }
 
 // String Utils
@@ -141,6 +209,34 @@ string_t *str_substr(string_t *string, size_t start, size_t end)
     return result;
 }
 
+ssize_t str_to_ssize_t(string_t *string)
+{
+    if (string->length == 0) {
+        return 0;
+    }
+
+    if (string->cursor[0] == '-') {
+        return -(ssize_t)str_to_size_t(STR_FROM_PTR(string->cursor + 1, string->length - 1));
+    } else {
+        return (ssize_t)str_to_size_t(string);
+    }
+}
+
+size_t str_to_size_t(string_t *string)
+{
+    size_t result = 0;
+
+    for (size_t i=0; i < string->length; i++) {
+        if (!isdigit(string->cursor[i])) {
+            return 0;
+        }
+        result *= 10;
+        result += string->cursor[i] - '0';
+    }
+
+    return result;
+}
+
 // String List Utils
 string_list_t *str_list_new(void)
 {
@@ -170,6 +266,7 @@ void str_list_append(string_list_t *list, string_t *string)
         list->strings = realloc(list->strings, list->capacity * sizeof(string_t));
     }
     string_t *dst = &list->strings[list->length++];
+    dst->buffer = NULL;
     dst->cursor = string->cursor;
     dst->length = string->length;
 }
@@ -206,11 +303,63 @@ void str_list_ensure_ownership(string_list_t *list)
     }
 }
 
+// Linked List Utils
+linked_list_t *linked_list_new(void)
+{
+    return calloc(1, sizeof(linked_list_t));
+}
+
+void linked_list_append(linked_list_t *list, void *value)
+{
+    linked_list_node_t *node = calloc(1, sizeof(linked_list_node_t));
+    node->value = value;
+    if (list->head == NULL) {
+        list->head = node;
+        list->tail = node;
+    } else {
+        list->tail->next = node;
+    }
+    list->tail = node;
+}
+
+void linked_list_insert_sorted(linked_list_t *list, void *value, compare_f compare_values)
+{
+    linked_list_node_t *node = calloc(1, sizeof(linked_list_node_t));
+    node->value = value;
+
+    if (list->head == NULL) {
+        list->head = node;
+        list->tail = node;
+        return;
+    }
+
+    if (compare_values(value, list->head->value) <= 0) {
+        node->next = list->head;
+        list->head = node;
+        return;
+    }
+
+    linked_list_node_t *previous = list->head;
+    linked_list_node_t *cursor = list->head->next;
+    while (cursor) {
+        if (compare_values(value, cursor->value) <= 0) {
+            node->next = cursor;
+            previous->next = node;
+            return;
+        }
+        previous = cursor;
+        cursor = cursor->next;
+    }
+
+    list->tail->next = node;
+    list->tail = node;
+}
+
 // Map Utils
-map_t *map_create(compare_f key_compare)
+map_t *map_create(equal_f key_equals)
 {
     map_t *map = malloc(sizeof(map_t));
-    map->key_compare = key_compare;
+    map->key_equals = key_equals;
     map->capacity = 32;
     map->entry_count = 0;
     map->entries = calloc(map->capacity, sizeof(map_entry_t));
@@ -221,7 +370,7 @@ void *map_get(map_t *map, void *key)
 {
     for (size_t i=0; i < map->entry_count; i++) {
         map_entry_t *entry = &map->entries[i];
-        if (map->key_compare(entry->key, key) == 0) {
+        if (map->key_equals(entry->key, key) == 0) {
             return entry->value;
         }
     }
@@ -233,7 +382,7 @@ void map_set(map_t *map, void *key, void *value)
 {
     for (size_t i=0; i < map->entry_count; i++) {
         map_entry_t *entry = &map->entries[i];
-        if (map->key_compare(entry->key, key) == 0) {
+        if (map->key_equals(entry->key, key) == 0) {
             entry->value = value;
             return;
         }
@@ -401,20 +550,26 @@ grid_t *file_read_grid(string_t *path)
 }
 
 // Ready to go comparators
-bool compare_strings(string_t *a, string_t *b)
+bool string_equals(const void *a, const void *b)
 {
-    if (a->length != b->length) {
+    const string_t *a_string = a;
+    const string_t *b_string = b;
+    if (a_string->length != b_string->length) {
         return false;
     }
-    return memcmp(a->cursor, b->cursor, a->length) == 0;
+    return memcmp(a_string->cursor, b_string->cursor, a_string->length) == 0;
 }
 
-bool compare_vec2(vec2_t *a, vec2_t *b)
+bool vec2_equals(const void *a, const void *b)
 {
-    return (a->x == b->x) && (a->y == b->y);
+    const vec2_t *a_vec = a;
+    const vec2_t *b_vec = b;
+    return (a_vec->x == b_vec->x) && (a_vec->y == b_vec->y);
 }
 
-bool compare_vec3(vec3_t *a, vec3_t *b)
+bool vec3_equals(const void *a, const void *b)
 {
-    return (a->x == b->x) && (a->y == b->y) && (a->z == b->z);
+    const vec3_t *a_vec = a;
+    const vec3_t *b_vec = b;
+    return (a_vec->x == b_vec->x) && (a_vec->y == b_vec->y) && (a_vec->z == b_vec->z);
 }

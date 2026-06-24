@@ -4,10 +4,12 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <unistd.h>
 
 
 // Function types
-typedef bool (*compare_f)(void *, void *);
+typedef bool (*equal_f)(const void *, const void *);
+typedef int (*compare_f)(const void *, const void *);
 
 
 // Math Utils
@@ -22,11 +24,33 @@ typedef struct vec3_t {
     size_t z;
 } vec3_t;
 
-size_t vec2_squared_distance(vec2_t *a, vec2_t *b);
-size_t vec3_squared_distance(vec3_t *a, vec3_t *b);
-double vec2_distance(vec2_t *a, vec2_t *b);
-double vec3_distance(vec3_t *a, vec3_t *b);
+typedef struct vec2_list_t {
+    vec2_t *items;
+    size_t item_count;
+    size_t capacity;
+} vec2_list_t;
 
+typedef struct vec3_list_t {
+    vec3_t *items;
+    size_t item_count;
+    size_t capacity;
+} vec3_list_t;
+
+size_t vec2_squared_distance(vec2_t *a, vec2_t *b);
+double vec2_distance(vec2_t *a, vec2_t *b);
+vec2_t *vec2_copy(vec2_t *vec);
+
+size_t vec3_squared_distance(vec3_t *a, vec3_t *b);
+double vec3_distance(vec3_t *a, vec3_t *b);
+vec3_t *vec3_copy(vec3_t *vec);
+
+vec2_list_t *vec2_list_new();
+void vec2_list_append(vec2_list_t *list, vec2_t *vec);
+void vec2_list_free(vec2_list_t *list);
+
+vec3_list_t *vec3_list_new();
+void vec3_list_append(vec3_list_t *list, vec3_t *vec);
+void vec3_list_free(vec3_list_t *list);
 
 // String and String List Utils
 typedef struct string_t {
@@ -62,6 +86,8 @@ string_list_t *str_split(string_t *string, string_t *separator, bool keep_empty)
 string_t *str_concat(string_t *a, string_t *b);
 void str_ensure_ownership(string_t *string);
 string_t *str_substr(string_t *string, size_t start, size_t end);
+ssize_t str_to_ssize_t(string_t *string);
+size_t str_to_size_t(string_t *string);
 void str_free(string_t *string);
 
 string_list_t *str_list_new(void);
@@ -100,6 +126,20 @@ grid_t *grid_from_lines(string_list_t *lines);
 grid_tile_t *grid_get(grid_t *grid, size_t row, size_t column);
 void grid_free(grid_t *grid);
 
+// Linked List Utils
+typedef struct linked_list_node_t {
+    void *value;
+    struct linked_list_node_t *next;
+} linked_list_node_t;
+
+typedef struct linked_list_t {
+    linked_list_node_t *head;
+    linked_list_node_t *tail;
+} linked_list_t;
+
+linked_list_t *linked_list_new(void);
+void linked_list_append(linked_list_t *list, void *value);
+void linked_list_insert_sorted(linked_list_t *list, void *value, compare_f compare_values);
 
 // Map Utils
 typedef struct map_entry_t {
@@ -108,13 +148,13 @@ typedef struct map_entry_t {
 } map_entry_t;
 
 typedef struct map_t {
-    compare_f key_compare;
+    equal_f key_equals;
     map_entry_t *entries;
     size_t entry_count;
     size_t capacity;
 } map_t;
 
-map_t *map_create(compare_f key_compare);
+map_t *map_create(equal_f key_compare);
 void *map_get(map_t *map, void *key);
 void map_set(map_t *map, void *key, void *value);
 void map_remove_null_values(map_t *map);
@@ -128,9 +168,9 @@ string_list_t *file_read_lines(string_t *path, bool keep_empty);
 grid_t *file_read_grid(string_t *path);
 
 
-// Comparators
-bool compare_strings(string_t *a, string_t *b);
-bool compare_vec2(vec2_t *a, vec2_t *b);
-bool compare_vec3(vec3_t *a, vec3_t *b);
+// Equals Functions
+bool string_equals(const void *a, const void *b);
+bool vec2_equals(const void *a, const void *b);
+bool vec3_equals(const void *a, const void *b);
 
 #endif
