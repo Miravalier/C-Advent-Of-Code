@@ -16,3 +16,10 @@ valgrind:
 	clang -I src src/*.c -lm -o test_executable -g
 	valgrind --track-origins=yes --leak-check=full ./test_executable
 	@rm -f test_executable
+
+
+.PHONY: time
+time:
+	clang -I src src/*.c -lm -o test_executable
+	time ./test_executable
+	@rm -f test_executable

@@ -309,8 +309,20 @@ linked_list_t *linked_list_new(void)
     return calloc(1, sizeof(linked_list_t));
 }
 
+void linked_list_free(linked_list_t *list)
+{
+    linked_list_node_t *node = list->head;
+    while (node) {
+        linked_list_node_t *next = node->next;
+        free(node);
+        node = next;
+    }
+    free(list);
+}
+
 void linked_list_append(linked_list_t *list, void *value)
 {
+    list->count++;
     linked_list_node_t *node = calloc(1, sizeof(linked_list_node_t));
     node->value = value;
     if (list->head == NULL) {
@@ -318,12 +330,67 @@ void linked_list_append(linked_list_t *list, void *value)
         list->tail = node;
     } else {
         list->tail->next = node;
+        node->prev = list->tail;
+        list->tail = node;
     }
+}
+
+bool linked_list_insert_sorted_unique(linked_list_t *list, void *value, compare_f compare_values)
+{
+    linked_list_node_t *node = calloc(1, sizeof(linked_list_node_t));
+    node->value = value;
+
+    if (list->head == NULL) {
+        list->head = node;
+        list->tail = node;
+        list->count++;
+        return true;
+    }
+
+    int diff = compare_values(value, list->head->value);
+    if (diff < 0) {
+        list->head->prev = node;
+        node->next = list->head;
+        list->head = node;
+        list->count++;
+        return true;
+    }
+
+    if (diff == 0) {
+        free(node);
+        return false;
+    }
+
+    linked_list_node_t *previous = list->head;
+    linked_list_node_t *cursor = list->head->next;
+    while (cursor) {
+        diff = compare_values(value, cursor->value);
+        if (diff < 0) {
+            node->next = cursor;
+            previous->next = node;
+            cursor->prev = node;
+            node->prev = previous;
+            list->count++;
+            return true;
+        }
+        if (diff == 0) {
+            free(node);
+            return false;
+        }
+        previous = cursor;
+        cursor = cursor->next;
+    }
+
+    list->tail->next = node;
+    node->prev = list->tail;
     list->tail = node;
+    list->count++;
+    return true;
 }
 
 void linked_list_insert_sorted(linked_list_t *list, void *value, compare_f compare_values)
 {
+    list->count++;
     linked_list_node_t *node = calloc(1, sizeof(linked_list_node_t));
     node->value = value;
 
@@ -334,6 +401,7 @@ void linked_list_insert_sorted(linked_list_t *list, void *value, compare_f compa
     }
 
     if (compare_values(value, list->head->value) <= 0) {
+        list->head->prev = node;
         node->next = list->head;
         list->head = node;
         return;
@@ -345,6 +413,8 @@ void linked_list_insert_sorted(linked_list_t *list, void *value, compare_f compa
         if (compare_values(value, cursor->value) <= 0) {
             node->next = cursor;
             previous->next = node;
+            cursor->prev = node;
+            node->prev = previous;
             return;
         }
         previous = cursor;
@@ -352,6 +422,7 @@ void linked_list_insert_sorted(linked_list_t *list, void *value, compare_f compa
     }
 
     list->tail->next = node;
+    node->prev = list->tail;
     list->tail = node;
 }
 
@@ -370,7 +441,7 @@ void *map_get(map_t *map, void *key)
 {
     for (size_t i=0; i < map->entry_count; i++) {
         map_entry_t *entry = &map->entries[i];
-        if (map->key_equals(entry->key, key) == 0) {
+        if (map->key_equals(entry->key, key)) {
             return entry->value;
         }
     }
@@ -382,7 +453,7 @@ void map_set(map_t *map, void *key, void *value)
 {
     for (size_t i=0; i < map->entry_count; i++) {
         map_entry_t *entry = &map->entries[i];
-        if (map->key_equals(entry->key, key) == 0) {
+        if (map->key_equals(entry->key, key)) {
             entry->value = value;
             return;
         }
@@ -550,6 +621,22 @@ grid_t *file_read_grid(string_t *path)
 }
 
 // Ready to go comparators
+bool pointer_equals(const void *a, const void *b)
+{
+    return a == b;
+}
+
+int pointer_compare(const void *a, const void *b)
+{
+    if (a < b) {
+        return -1;
+    } else if (a > b) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
 bool string_equals(const void *a, const void *b)
 {
     const string_t *a_string = a;
@@ -558,6 +645,42 @@ bool string_equals(const void *a, const void *b)
         return false;
     }
     return memcmp(a_string->cursor, b_string->cursor, a_string->length) == 0;
+}
+
+int vec2_compare(const void *a, const void *b)
+{
+    const vec2_t *a_vec = a;
+    const vec2_t *b_vec = b;
+    if (a_vec->x < b_vec->x) {
+        return -1;
+    } else if (a_vec->x > b_vec->x) {
+        return 1;
+    } else if (a_vec->y < b_vec->y) {
+        return -1;
+    } else if (a_vec->y > b_vec->y) {
+        return 1;
+    }
+    return 0;
+}
+
+int vec3_compare(const void *a, const void *b)
+{
+    const vec3_t *a_vec = a;
+    const vec3_t *b_vec = b;
+    if (a_vec->x < b_vec->x) {
+        return -1;
+    } else if (a_vec->x > b_vec->x) {
+        return 1;
+    } else if (a_vec->y < b_vec->y) {
+        return -1;
+    } else if (a_vec->y > b_vec->y) {
+        return 1;
+    } else if (a_vec->z < b_vec->z) {
+        return -1;
+    } else if (a_vec->z > b_vec->z) {
+        return 1;
+    }
+    return 0;
 }
 
 bool vec2_equals(const void *a, const void *b)

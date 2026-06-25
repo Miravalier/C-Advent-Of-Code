@@ -130,15 +130,19 @@ void grid_free(grid_t *grid);
 typedef struct linked_list_node_t {
     void *value;
     struct linked_list_node_t *next;
+    struct linked_list_node_t *prev;
 } linked_list_node_t;
 
 typedef struct linked_list_t {
     linked_list_node_t *head;
     linked_list_node_t *tail;
+    size_t count;
 } linked_list_t;
 
 linked_list_t *linked_list_new(void);
+void linked_list_free(linked_list_t *list);
 void linked_list_append(linked_list_t *list, void *value);
+bool linked_list_insert_sorted_unique(linked_list_t *list, void *value, compare_f compare_values);
 void linked_list_insert_sorted(linked_list_t *list, void *value, compare_f compare_values);
 
 // Map Utils
@@ -154,7 +158,7 @@ typedef struct map_t {
     size_t capacity;
 } map_t;
 
-map_t *map_create(equal_f key_compare);
+map_t *map_create(equal_f key_equals);
 void *map_get(map_t *map, void *key);
 void map_set(map_t *map, void *key, void *value);
 void map_remove_null_values(map_t *map);
@@ -168,7 +172,11 @@ string_list_t *file_read_lines(string_t *path, bool keep_empty);
 grid_t *file_read_grid(string_t *path);
 
 
-// Equals Functions
+// Comparator Functions
+int pointer_compare(const void *a, const void *b);
+int vec2_compare(const void *a, const void *b);
+int vec3_compare(const void *a, const void *b);
+bool pointer_equals(const void *a, const void *b);
 bool string_equals(const void *a, const void *b);
 bool vec2_equals(const void *a, const void *b);
 bool vec3_equals(const void *a, const void *b);
